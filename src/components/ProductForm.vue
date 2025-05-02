@@ -1,12 +1,12 @@
-<template>
+   <template>
     <form @submit.prevent="submitForm" class="form">
-      <h2>Nieuw product toevoegen</h2>
+      <h2>{{ product.id ? '✏️ Product bewerken' : '➕ Nieuw product toevoegen' }}</h2>
   
       <label>Naam:</label>
       <input v-model="product.naam" required />
   
       <label>Prijs (€):</label>
-      <input type="number" v-model="product.prijs" min="0" step="0.01" required />
+      <input type="number" v-model="product.prijs" step="0.01" min="0" required />
   
       <label>Voorraad:</label>
       <input type="number" v-model="product.voorraad" min="0" required />
@@ -15,60 +15,95 @@
       <input v-model="product.categorie" />
   
       <label>Beschrijving:</label>
-      <textarea v-model="product.beschrijving"></textarea>
+      <textarea v-model="product.beschrijving" />
   
-      <label>Afbeelding URL:</label>
+      <label>Afbeelding URL (optioneel):</label>
       <input v-model="product.afbeelding" />
   
-      <button type="submit">Toevoegen</button>
-      <p v-if="melding" class="success">{{ melding }}</p>
+      <button type="submit">{{ product.id ? 'Opslaan' : 'Toevoegen' }}</button>
+  
+      <p v-if="melding" class="melding">{{ melding }}</p>
     </form>
   </template>
   
   <script setup>
-  import { ref } from 'vue'
+  import { ref, watch } from 'vue'
   import productApi from '../api/productApi'
   
-  const product = ref({
+  const props = defineProps({
+    modelValue: Object
+  })
+  
+  const emit = defineEmits(['toegevoegd'])
+  
+  const leegProduct = {
     naam: '',
-    prijs: 0.00,
+    prijs: 0,
     voorraad: 0,
     categorie: '',
     beschrijving: '',
     afbeelding: ''
-  })
+  }
   
+  const product = ref({ ...leegProduct })
   const melding = ref('')
+  
+  // Als er iets bewerkt moet worden
+  watch(() => props.modelValue, (nieuw) => {
+    if (nieuw && nieuw.id) {
+      product.value = { ...nieuw }
+    } else {
+      product.value = { ...leegProduct }
+    }
+  })
   
   const submitForm = async () => {
     try {
-      await productApi.create(product.value)
-      melding.value = '✅ Product succesvol toegevoegd!'
-      // Reset formulier
-      product.value = {
-        naam: '',
-        prijs: 0.00,
-        voorraad: 0,
-        categorie: '',
-        beschrijving: '',
-        afbeelding: ''
+      if (product.value.id) {
+        await productApi.update(product.value.id, product.value)
+        melding.value = '✏️ Product bijgewerkt!'
+      } else {
+        await productApi.create(product.value)
+        melding.value = '✅ Product toegevoegd!'
       }
+  
+      emit('toegevoegd') // Vertel de ouder dat er iets is toegevoegd of bewerkt
+      product.value = { ...leegProduct } // Formulier resetten
     } catch (err) {
-      console.error('Fout bij toevoegen:', err)
-      melding.value = '❌ Fout bij toevoegen van product'
+      console.error("❌ Fout bij verzenden:", err)
+      melding.value = '❌ Fout bij opslaan'
     }
+  
+    // Verwijder melding na 3 seconden
+    setTimeout(() => (melding.value = ''), 3000)
   }
   </script>
   
   <style scoped>
   .form {
     max-width: 400px;
-    margin: auto;
+    margin-bottom: 2rem;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
   }
-  .success {
+  
+  button {
+    padding: 0.5rem;
+    font-weight: bold;
+    background-color: #2f80ed;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background-color: #1366d6;
+  }
+  
+  .melding {
+    margin-top: 0.5rem;
     color: green;
   }
   </style>
