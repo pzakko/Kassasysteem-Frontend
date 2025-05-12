@@ -39,6 +39,7 @@
 import { ref, onMounted } from 'vue'
 import productApi from '../api/productApi'
 import ProductForm from '../components/ProductForm.vue'
+import webSocketClient from '../api/webSocketClient' // ✅ Voeg WebSocket client toe
 
 const producten = ref([])
 const geselecteerd = ref(null)
@@ -56,8 +57,8 @@ const laadProducten = async () => {
 }
 
 const handleToegevoegd = () => {
-  geselecteerd.value = null // reset formulier
-  laadProducten()           // herlaad lijst
+  geselecteerd.value = null
+  laadProducten()
 }
 
 const verwijderProduct = async (id) => {
@@ -72,11 +73,25 @@ const verwijderProduct = async (id) => {
 }
 
 const vulFormulier = (product) => {
-  geselecteerd.value = { ...product } // kopieer naar formulier
+  geselecteerd.value = { ...product }
 }
 
 onMounted(() => {
   laadProducten()
+
+  // ✅ Start WebSocket connectie bij laden
+  webSocketClient.connect((nieuwProduct) => {
+    console.log('📡 Realtime product ontvangen via WebSocket:', nieuwProduct)
+
+    // Controleer of het product al bestaat (voorkom dubbel)
+    const bestaatAl = producten.value.some(p => p.id === nieuwProduct.id)
+    if (!bestaatAl) {
+      producten.value.push(nieuwProduct)
+    } else {
+      // Of update het product als het al bestaat
+      producten.value = producten.value.map(p => (p.id === nieuwProduct.id ? nieuwProduct : p))
+    }
+  })
 })
 </script>
 
