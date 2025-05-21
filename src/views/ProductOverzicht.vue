@@ -2,6 +2,9 @@
   <div class="container">
     <h1>Productoverzicht</h1>
 
+    <!-- ✅ Melding -->
+<div v-if="melding" class="toast">{{ melding }}</div>
+
     <!-- ✅ Formulier -->
     <ProductForm
       :modelValue="geselecteerd"
@@ -9,7 +12,7 @@
     />
 
     <!-- 🔄 Laadstatus -->
-    <div v-if="loading">Laden...</div>
+    <div v-if="loading">⌛ Laden...</div>
 
     <!-- 🚫 Geen producten -->
     <div v-else-if="!producten || producten.length === 0">
@@ -39,11 +42,24 @@
 import { ref, onMounted } from 'vue'
 import productApi from '../api/productApi'
 import ProductForm from '../components/ProductForm.vue'
-import webSocketClient from '../api/webSocketClient' // ✅ Voeg WebSocket client toe
+import webSocketClient from '../api/webSocketClient'
 
 const producten = ref([])
 const geselecteerd = ref(null)
 const loading = ref(true)
+const melding = ref('')
+
+const toonMelding = (tekst) => {
+  if (melding.value === tekst) return
+
+  melding.value = tekst
+
+  setTimeout(() => {
+    if (melding.value === tekst) {
+      melding.value = ''
+    }
+  }, 5000)
+}
 
 const laadProducten = async () => {
   try {
@@ -58,14 +74,12 @@ const laadProducten = async () => {
 
 const handleToegevoegd = () => {
   geselecteerd.value = null
-  laadProducten()
 }
 
 const verwijderProduct = async (id) => {
   if (confirm('Weet je zeker dat je dit product wilt verwijderen?')) {
     try {
-      await productApi.remove(id)
-      laadProducten()
+      webSocketClient.verwijderViaSocket(id)
     } catch (err) {
       console.error("❌ Fout bij verwijderen:", err)
     }
@@ -76,28 +90,46 @@ const vulFormulier = (product) => {
   geselecteerd.value = { ...product }
 }
 
+
 onMounted(() => {
   laadProducten()
 
-  // ✅ Start WebSocket connectie bij laden
-  webSocketClient.connect((nieuwProduct) => {
-    console.log('📡 Realtime product ontvangen via WebSocket:', nieuwProduct)
+  webSocketClient.connect(
+    (nieuwProduct) => {
+      const bestaand = producten.value.find(p => p.id === nieuwProduct.id)
 
-    // Controleer of het product al bestaat (voorkom dubbel)
-    const bestaatAl = producten.value.some(p => p.id === nieuwProduct.id)
-    if (!bestaatAl) {
-      producten.value.push(nieuwProduct)
-    } else {
-      // Of update het product als het al bestaat
-      producten.value = producten.value.map(p => (p.id === nieuwProduct.id ? nieuwProduct : p))
+      if (!bestaand) {
+        producten.value.push(nieuwProduct)
+        toonMelding(`✅ Nieuw product toegevoegd: ${nieuwProduct.naam}`)
+      } else {
+        producten.value = producten.value.map(p =>
+          p.id === nieuwProduct.id ? nieuwProduct : p
+        )
+        toonMelding(`✏️ Product bijgewerkt: ${nieuwProduct.naam}`)
+      }
+    },
+    (verwijderdId) => {
+      const verwijderdProduct = producten.value.find(p => p.id === verwijderdId)
+      producten.value = producten.value.filter(p => p.id !== verwijderdId)
+      toonMelding(`🗑️ Product verwijderd: ${verwijderdProduct?.naam || 'Onbekend'}`)
     }
-  })
+  )
 })
+
 </script>
 
 <style scoped>
 .container {
   padding: 1.5rem;
+}
+
+.melding {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 0.5rem;
+  border: 1px solid #c3e6cb;
+  border-radius: 4px;
+  margin-bottom: 1rem;
 }
 
 .product-grid {
@@ -130,4 +162,28 @@ button {
 button:hover {
   background-color: #ddd;
 }
+
+.toast {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background-color: #323232;
+  color: white;
+  padding: 0.75rem 1.2rem;
+  border-radius: 6px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+@keyframes fadein {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeout {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-10px); }
+}
+
 </style>
