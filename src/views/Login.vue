@@ -73,32 +73,34 @@ const handleLogin = async () => {
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import axios from 'axios'
-import { useRouter } from 'vue-router'
+import { ref } from 'vue';
+import axios from 'axios';
+import { useRouter } from 'vue-router';
 
-const username = ref('')
-const password = ref('')
-const errorMessage = ref('')
-const router = useRouter()
+const username = ref('');
+const password = ref('');
+const errorMessage = ref('');
+const router = useRouter();
 
 const handleLogin = async () => {
   try {
     const response = await axios.post('http://localhost:8080/api/auth/login', {
       username: username.value,
       password: password.value
-    })
+    });
 
-    const token = response.data.token
-    localStorage.setItem('token', token)
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    const token = response.data.token;
+    console.log('Ontvangen token:', token); // Debug: controleer of de token wordt ontvangen
+    localStorage.setItem('token', token);
+    console.log('Token opgeslagen:', localStorage.getItem('token')); // Debug: controleer of de token is opgeslagen
 
-    errorMessage.value = ''
-    router.push('/producten')
+    errorMessage.value = '';
+    router.push('/producten');
   } catch (error) {
-    errorMessage.value = 'Inloggen mislukt. Controleer je gebruikersnaam en wachtwoord.'
+    console.error('Login fout:', error); // Debug: toon de foutdetails
+    errorMessage.value = 'Inloggen mislukt. Controleer je gebruikersnaam en wachtwoord.';
   }
-}
+};
 </script>
 
 <style scoped>

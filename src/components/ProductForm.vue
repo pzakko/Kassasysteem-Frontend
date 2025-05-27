@@ -57,26 +57,27 @@
     }
   })
   
-  const submitForm = async () => {
-    try {
-      if (product.value.id) {
-        await productApi.update(product.value.id, product.value)
-        melding.value = '✏️ Product bijgewerkt!'
-      } else {
-        await productApi.create(product.value)
-        melding.value = '✅ Product toegevoegd!'
-      }
-  
-      emit('toegevoegd') // Vertel de ouder dat er iets is toegevoegd of bewerkt
-      product.value = { ...leegProduct } // Formulier resetten
-    } catch (err) {
-      console.error("❌ Fout bij verzenden:", err)
-      melding.value = '❌ Fout bij opslaan'
+const submitForm = async () => {
+  try {
+    console.log('Verzonden data:', product.value); // Log de data die wordt verzonden
+    if (product.value.id) {
+      await productApi.update(product.value.id, product.value);
+      melding.value = '✏️ Product bijgewerkt!';
+    } else {
+      await productApi.create(product.value);
+      melding.value = '✅ Product toegevoegd!';
     }
-  
-    // Verwijder melding na 3 seconden
-    setTimeout(() => (melding.value = ''), 3000)
+
+    emit('toegevoegd'); // Vertel de ouder dat er iets is toegevoegd of bewerkt
+    product.value = { ...leegProduct }; // Formulier resetten
+  } catch (err) {
+    console.error("❌ Fout bij verzenden:", err.response ? err.response.data : err); // Log foutdetails
+    melding.value = '❌ Fout bij opslaan';
   }
+
+  // Verwijder melding na 3 seconden
+  setTimeout(() => (melding.value = ''), 3000);
+}
   </script>
   
   <style scoped>
