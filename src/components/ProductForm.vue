@@ -1,4 +1,4 @@
-   <template>
+   <!-- <template>
     <form @submit.prevent="submitForm" class="form">
       <h2>{{ product.id ? '✏️ Product bewerken' : '➕ Nieuw product toevoegen' }}</h2>
   
@@ -24,7 +24,36 @@
   
       <p v-if="melding" class="melding">{{ melding }}</p>
     </form>
-  </template>
+  </template> -->
+
+  <template>
+  <form @submit.prevent="submitForm" class="form">
+    <h2>{{ product.id ? '✏️ Product bewerken' : '➕ Nieuw product toevoegen' }}</h2>
+
+    <label>Naam:</label>
+    <input v-model="product.naam" required data-testid="naam" />
+
+    <label>Prijs (€):</label>
+    <input type="number" v-model="product.prijs" step="0.01" min="0" required data-testid="prijs" />
+
+    <label>Voorraad:</label>
+    <input type="number" v-model="product.voorraad" min="0" required data-testid="voorraad" />
+
+    <label>Categorie:</label>
+    <input v-model="product.categorie" data-testid="categorie" />
+
+    <label>Beschrijving:</label>
+    <textarea v-model="product.beschrijving" data-testid="beschrijving" />
+
+    <label>Afbeelding URL (optioneel):</label>
+    <input v-model="product.afbeelding" data-testid="afbeelding" />
+
+    <button type="submit" data-testid="toevoegen-knop">{{ product.id ? 'Opslaan' : 'Toevoegen' }}</button>
+
+    <p v-if="melding" class="melding">{{ melding }}</p>
+  </form>
+</template>
+
   
   <script setup>
   import { ref, watch } from 'vue'
