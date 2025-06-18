@@ -2,6 +2,11 @@
   <div class="product-container">
     <h1 class="text-3xl font-semibold text-center text-blue-600 mb-6">🛒 Productoverzicht</h1>
 
+    <!-- Info voor gebruiker -->
+    <p v-if="userRole === 'GEBRUIKER'" class="text-gray-500 italic text-center mb-4">
+      Je hebt alleen leesrechten. Bewerken of toevoegen is alleen mogelijk voor admins.
+    </p>
+
     <!-- Zoekveld -->
     <div class="mb-6">
       <input
@@ -12,10 +17,15 @@
       />
     </div>
 
-    <!-- Formulier -->
-    <ProductForm :modelValue="geselecteerdProduct" @toegevoegd="resetForm" class="mb-6" />
+    <!-- ProductForm alleen voor ADMIN -->
+    <ProductForm
+      v-if="userRole === 'ADMIN'"
+      :modelValue="geselecteerdProduct"
+      @toegevoegd="resetForm"
+      class="mb-6"
+    />
 
-    <!-- Grid met producten -->
+    <!-- Producten grid -->
     <p v-if="filteredProducten.length === 0" class="text-gray-500 text-center">Geen producten gevonden.</p>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       <div
@@ -32,16 +42,16 @@
           <p v-if="product.beschrijving" class="text-sm text-gray-500 mb-2">{{ product.beschrijving }}</p>
         </div>
 
-        <div class="hidden sm:flex gap-2 mt-auto pt-4">
+        <!-- Knoppen alleen voor ADMIN -->
+        <div v-if="userRole === 'ADMIN'" class="hidden sm:flex gap-2 mt-auto pt-4">
           <button @click.stop="bewerken(product)" class="btn-primary">✏️ Bewerken</button>
-          <!-- <button @click.stop="initDelete(product)" class="btn-danger">🗑️ Verwijderen</button> -->
-           <button
+          <button
             @click.stop="initDelete(product)"
             class="btn-danger"
-            data-testid="verwijder-knop">
-          🗑️ Verwijderen
-</button>
-
+            data-testid="verwijder-knop"
+          >
+            🗑️ Verwijderen
+          </button>
         </div>
       </div>
     </div>
@@ -69,6 +79,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { jwtDecode } from 'jwt-decode' // ✅ juiste import
 import axios from '@/api/axiosInstance'
 import webSocketClient from '@/api/webSocketClient'
 import ProductForm from '@/components/ProductForm.vue'
@@ -78,6 +89,15 @@ const geselecteerdProduct = ref(null)
 const searchQuery = ref('')
 const sidebarMessages = ref([])
 const productToDelete = ref(null)
+
+// 🔐 JWT rol uitlezen
+const userRole = ref('')
+const token = localStorage.getItem('token')
+if (token) {
+  const decoded = jwtDecode(token)
+  const roles = decoded.roles || []
+  userRole.value = roles.includes('ROLE_ADMIN') ? 'ADMIN' : 'GEBRUIKER'
+}
 
 const filteredProducten = computed(() => {
   const query = searchQuery.value.toLowerCase()
@@ -223,7 +243,6 @@ const confirmDelete = async () => {
   background-color: #dc2626;
 }
 
-/* ✅ Toast styles */
 .toast-container {
   position: fixed;
   top: 20px;
@@ -277,7 +296,6 @@ const confirmDelete = async () => {
   }
 }
 
-/* ✅ Mobile responsiveness */
 @media (max-width: 640px) {
   .product-container {
     padding: 16px;
@@ -295,6 +313,4 @@ const confirmDelete = async () => {
   }
 }
 </style>
-
-
 

@@ -1,31 +1,3 @@
-   <!-- <template>
-    <form @submit.prevent="submitForm" class="form">
-      <h2>{{ product.id ? '✏️ Product bewerken' : '➕ Nieuw product toevoegen' }}</h2>
-  
-      <label>Naam:</label>
-      <input v-model="product.naam" required />
-  
-      <label>Prijs (€):</label>
-      <input type="number" v-model="product.prijs" step="0.01" min="0" required />
-  
-      <label>Voorraad:</label>
-      <input type="number" v-model="product.voorraad" min="0" required />
-  
-      <label>Categorie:</label>
-      <input v-model="product.categorie" />
-  
-      <label>Beschrijving:</label>
-      <textarea v-model="product.beschrijving" />
-  
-      <label>Afbeelding URL (optioneel):</label>
-      <input v-model="product.afbeelding" />
-  
-      <button type="submit">{{ product.id ? 'Opslaan' : 'Toevoegen' }}</button>
-  
-      <p v-if="melding" class="melding">{{ melding }}</p>
-    </form>
-  </template> -->
-
   <template>
   <form @submit.prevent="submitForm" class="form">
     <h2>{{ product.id ? '✏️ Product bewerken' : '➕ Nieuw product toevoegen' }}</h2>

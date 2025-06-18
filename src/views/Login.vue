@@ -58,6 +58,7 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
+import { jwtDecode } from 'jwt-decode' // ✅ correcte import
 
 const username = ref('')
 const password = ref('')
@@ -70,21 +71,28 @@ const router = useRouter()
 const handleLogin = async () => {
   loading.value = true
   errorMessage.value = ''
+
   try {
     const response = await axios.post('http://localhost:8080/api/auth/login', {
       username: username.value,
       password: password.value
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': undefined
-      }
     })
 
     const token = response.data.token
     localStorage.setItem('token', token)
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-    router.push('/producten')
+
+    // ✅ Rol uitlezen uit token
+    const decoded = jwtDecode(token)
+    const roles = decoded.roles || []
+    const isAdmin = roles.includes('ROLE_ADMIN')
+
+    if (isAdmin) {
+      router.push('/producten')
+    } else {
+      router.push('/producten-gebruiker')
+    }
+
   } catch (error) {
     errorMessage.value = 'Inloggen mislukt. Controleer je gebruikersnaam en wachtwoord.'
     console.error('Login fout:', error)
@@ -93,7 +101,6 @@ const handleLogin = async () => {
   }
 }
 </script>
-
 <style scoped>
 .login-container {
   max-width: 420px;
